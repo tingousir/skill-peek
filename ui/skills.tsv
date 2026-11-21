@@ -1,0 +1,72 @@
+工作	tdd	工程	先写会失败的测试	#3E7A96
+工作	code-review	工程	标准与需求双线审	#3E7A96
+工作	systematic-debugging	工程	按流程定位 bug	#3E7A96
+工作	test-driven-development	工程	红绿重构细规则	#3E7A96
+工作	design-taste-frontend	设计	公司站点级设计	#9A7433
+工作	ui-ux-pro-max	设计	配色字体规则库	#9A7433
+工作	diagnosing-bugs	工程	深挖难复现问题	#3E7A96
+工作	receiving-code-review	工程	校验评审意见	#3E7A96
+工作	webapp-testing	设计	点页面查控制台	#9A7433
+工作	requesting-code-review	工程	发起一次像样的评审	#3E7A96
+工作	finishing-a-development-branch	工程	决定怎么合并收尾	#3E7A96
+工作	frontend-design	设计	前端设计规范	#9A7433
+工作	ponytail	工程	最小改动方案	#3E7A96
+工作	using-git-worktrees	工程	隔开功能工作区	#3E7A96
+工作	caveman	工程	极简输出	#3E7A96
+工作	codebase-design	工程	设计模块接口与边界	#3E7A96
+工作	playwright-cli	设计	浏览器自动化	#9A7433
+工作	image	设计	生成或挑选配图	#9A7433
+工作	improve-codebase-architecture	工程	找架构改进点	#3E7A96
+工作	domain-modeling	工程	建领域模型与术语表	#3E7A96
+工作	setup-pre-commit	工程	配提交前检查	#3E7A96
+工作	video	设计	代码或 AI 出视频	#9A7433
+工作	artifacts-builder	设计	做可交互的网页产物	#9A7433
+工作	canvas-design	设计	海报与图形视觉稿	#9A7433
+工作	diagnose-windows-sandbox-acl	工程	修 Windows 沙箱 ACL	#3E7A96
+工作	brand-guidelines	设计	品牌规范落地	#9A7433
+工作	theme-factory	设计	生成一套配色主题	#9A7433
+工作	slack-gif-creator	设计	做 Slack 动图	#9A7433
+规划	brainstorming	流程	问清需求再动手	#5E6E92
+规划	writing-plans	流程	写可执行的计划	#5E6E92
+规划	verification-before-completion	流程	完成前先验证据	#5E6E92
+规划	grilling	流程	拷问方案漏洞	#5E6E92
+规划	prototype	流程	做一次性原型	#5E6E92
+规划	executing-plans	流程	照计划一步步做	#5E6E92
+规划	dispatching-parallel-agents	流程	并行跑独立任务	#5E6E92
+规划	subagent-driven-development	流程	拆任务给子代理	#5E6E92
+规划	understand	调研	生成代码知识图谱	#4C7F6B
+规划	superpowers	流程	核心技能库总入口	#5E6E92
+规划	mcp-builder	调研	写一个 MCP 服务	#4C7F6B
+规划	last30days	调研	近 30 天全网舆情	#4C7F6B
+规划	research	调研	生成调研 outline	#4C7F6B
+规划	retro	流程	事后复盘成清单	#5E6E92
+规划	triage	流程	分诊：先处理哪个	#5E6E92
+规划	launch	增长	发布节奏与曝光	#A0642F
+规划	handoff	流程	交接给下一个人或会话	#5E6E92
+规划	seo-audit	增长	诊断收录与排名	#A0642F
+规划	social	增长	按平台写内容	#A0642F
+规划	competitor-profiling	增长	竞品档案	#A0642F
+规划	understand-chat	调研	基于图谱问答	#4C7F6B
+规划	understand-diff	调研	分析改动影响面	#4C7F6B
+规划	wayfinder	流程	迷路时重新找方向	#5E6E92
+规划	ab-testing	增长	判断结果真伪	#A0642F
+规划	analytics	增长	埋点与指标口径	#A0642F
+规划	pricing	增长	定价与套餐	#A0642F
+规划	academic-research-suite	调研	学术综述/写作/审稿	#4C7F6B
+规划	schema	增长	JSON-LD 结构化数据	#A0642F
+写作	doc-coauthoring	写作	结构化写文档	#8C5A66
+写作	humanizer	写作	去掉 AI 腔	#8C5A66
+写作	copywriting	写作	写落地页文案	#8C5A66
+写作	copy-editing	写作	精修现有文案	#8C5A66
+写作	pr	写作	写 PR 正文	#8C5A66
+写作	docx	写作	读写 Word	#8C5A66
+写作	writing-for-agents	写作	写 agent 文档	#8C5A66
+写作	pdf	写作	读 PDF 与填表	#8C5A66
+写作	writing-skills	写作	新建并验证 skill	#8C5A66
+写作	skill-creator	写作	生成新 skill 骨架	#8C5A66
+写作	xlsx	写作	读写 Excel	#8C5A66
+写作	pptx	写作	读写 PPT	#8C5A66
+写作	office-docx	写作	生成并校验 Word	#8C5A66
+写作	office-pptx	写作	生成并校验 PPT	#8C5A66
+写作	document-typography	写作	文档排版质检	#8C5A66
+写作	internal-comms	写作	内部通知与公告	#8C5A66

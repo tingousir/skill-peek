@@ -1,0 +1,26 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        shell: powershell
+        run: .\build.ps1
+
+      - name: Package
+        shell: powershell
+        run: Compress-Archive -Path dist\* -DestinationPath SkillPeek-win-x64.zip -Force
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SkillPeek-win-x64
+          path: SkillPeek-win-x64.zip

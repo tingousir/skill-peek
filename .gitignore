@@ -1,0 +1,10 @@
+# 构建产物
+dist/
+build/
+
+# 本地截图
+shots/
+
+# IDE
+.vs/
+*.user
