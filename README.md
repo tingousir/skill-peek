@@ -6,7 +6,7 @@ Skill Peek 是一个 Windows 托盘工具。按全局热键打开技能面板，
 
 ## 使用
 
-从 `dist` 双击 `SkillPeek.exe`，也可以运行 `start.bat`。首次使用的热键是 `Ctrl+Shift+Space`，可在托盘右键菜单里换成 `Alt` + 反引号等预设。
+从 `dist` 双击 `SkillPeek.exe`（首次运行前先跑一次 `build.ps1`）。首次使用的热键是 `Ctrl+Shift+Space`，可在托盘右键菜单里换成 `Alt` + 反引号等预设。
 
 | 操作 | 结果 |
 |---|---|
