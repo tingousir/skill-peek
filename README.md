@@ -1,5 +1,7 @@
 # Skill Peek
 
+**中文** · [English](README.en.md)
+
 [![build](https://github.com/tingousir/skill-peek/actions/workflows/build.yml/badge.svg)](https://github.com/tingousir/skill-peek/actions/workflows/build.yml)
 [![release](https://img.shields.io/github/v/release/tingousir/skill-peek?color=2f7d5b)](https://github.com/tingousir/skill-peek/releases/latest)
 [![license](https://img.shields.io/github/license/tingousir/skill-peek?color=2f7d5b)](LICENSE)
