@@ -70,6 +70,7 @@ namespace SkillPeek
         private SkillPanel panel;
         private readonly NotifyIcon tray;
         private readonly System.Windows.Forms.Timer holdTimer;
+        private readonly System.Windows.Forms.Timer pasteTimer;
         private ToolStripMenuItem[] hkPresets = new ToolStripMenuItem[0];
 
         private string settingsPath;
@@ -77,6 +78,8 @@ namespace SkillPeek
         private uint hkMods;
         private uint hkVk;
         private IntPtr previousWindow = IntPtr.Zero;
+        private IntPtr pendingPasteWindow;
+        private int pasteStarted;
         private bool pasteEnabled = true;
         private string[] skillsRoots = new string[0];
 
@@ -148,6 +151,8 @@ namespace SkillPeek
             holdTimer = new System.Windows.Forms.Timer();
             holdTimer.Interval = 40;
             holdTimer.Tick += delegate { CheckHold(); };
+            pasteTimer = new System.Windows.Forms.Timer { Interval = 15 };
+            pasteTimer.Tick += delegate { PasteWhenFocused(); };
             // 面板启动时隐藏，仍需创建窗口句柄以注册全局热键。
             IntPtr forceHandle = Handle;
         }
@@ -167,6 +172,7 @@ namespace SkillPeek
             {
                 if (IsHandleCreated) { Native.UnregisterHotKey(Handle, HOTKEY_ID); }
                 if (holdTimer != null) { holdTimer.Dispose(); }
+                if (pasteTimer != null) { pasteTimer.Dispose(); }
                 if (tray != null)
                 {
                     tray.Visible = false;
@@ -206,6 +212,8 @@ namespace SkillPeek
         private void ShowPanel()
         {
             if (Visible) { return; }
+            pasteTimer.Stop();
+            pendingPasteWindow = IntPtr.Zero;
             previousWindow = Native.GetForegroundWindow();
             Rectangle work = Screen.FromHandle(previousWindow).WorkingArea;
             if (panel == null)
@@ -218,14 +226,12 @@ namespace SkillPeek
             }
 
             panel.SetMode(mode);
-            panel.SetInstalled(ScanSkills());
             int width = Math.Min(panel.PreferredPanelWidth, (int)(work.Width * 0.94));
             ClientSize = new Size(width, panel.PreferredPanelHeight(width, (int)(work.Height * 0.92)));
             Location = new Point(work.Left + (work.Width - Width) / 2, work.Top + (work.Height - Height) / 2);
-            panel.Reset();
+            panel.Reset(ScanSkills());
             Show();
-            Native.SetForegroundWindow(Handle);
-            Activate();
+            if (Native.GetForegroundWindow() != Handle) { Native.SetForegroundWindow(Handle); }
             panel.FocusSelection();
             UpdateHoldTimer();
         }
@@ -248,7 +254,12 @@ namespace SkillPeek
             catch (ExternalException) { panel.ShowNotice("剪贴板正忙，请再试一次"); return; }
             IntPtr target = previousWindow;
             HidePanel();
-            if (pasteEnabled && target != IntPtr.Zero) { PasteNow(target); }
+            if (pasteEnabled && target != IntPtr.Zero)
+            {
+                pendingPasteWindow = target;
+                pasteStarted = Environment.TickCount;
+                BeginInvoke(new Action(PasteWhenFocused));
+            }
         }
 
         private void RefreshSkills()
@@ -257,18 +268,25 @@ namespace SkillPeek
         }
 
         /* 把焦点还给原窗口，再发一次 Ctrl+V */
-        private void PasteNow(IntPtr target)
+        private void PasteWhenFocused()
         {
-            try
+            if (pendingPasteWindow != IntPtr.Zero)
             {
-                Native.SetForegroundWindow(target);
-                System.Threading.Thread.Sleep(130);
-                Native.keybd_event(0x11, 0, 0, UIntPtr.Zero);   // Ctrl down
-                Native.keybd_event(0x56, 0, 0, UIntPtr.Zero);   // V down
-                Native.keybd_event(0x56, 0, 2, UIntPtr.Zero);   // V up
-                Native.keybd_event(0x11, 0, 2, UIntPtr.Zero);   // Ctrl up
+                if (Native.GetForegroundWindow() == pendingPasteWindow)
+                {
+                    Native.keybd_event(0x11, 0, 0, UIntPtr.Zero);   // Ctrl down
+                    Native.keybd_event(0x56, 0, 0, UIntPtr.Zero);   // V down
+                    Native.keybd_event(0x56, 0, 2, UIntPtr.Zero);   // V up
+                    Native.keybd_event(0x11, 0, 2, UIntPtr.Zero);   // Ctrl up
+                }
+                else if (unchecked(Environment.TickCount - pasteStarted) < 100)
+                {
+                    pasteTimer.Start();
+                    return;
+                }
+                pendingPasteWindow = IntPtr.Zero;
             }
-            catch { }
+            pasteTimer.Stop();
         }
 
         private void CheckHold()

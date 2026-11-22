@@ -46,6 +46,8 @@ namespace SkillPeek
         private int selected;
         private int columns;
         private int footerTop;
+        private float nameSampleDpi;
+        private int nameSampleWidth;
         private long lastWheel;
         private Point lastPointer;
         private string notice;
@@ -105,7 +107,8 @@ namespace SkillPeek
             once = AddButton("一次", delegate { changeMode("once"); });
             close = AddButton("Esc", closePanel);
             close.AccessibleName = "收起面板";
-            UpdateCards();
+            UpdateTabs();
+            UpdateCards(true);
         }
 
         private Tile AddButton(string text, Action action)
@@ -176,96 +179,136 @@ namespace SkillPeek
             }
         }
 
+        public void Reset(HashSet<string> names)
+        {
+            lastWheel = 0;
+            lastPointer = Cursor.Position;
+            if (grid.AutoScrollPosition != Point.Empty) { grid.AutoScrollPosition = Point.Empty; }
+            bool pageChanged = page != 0;
+            bool installedChanged = !installed.SetEquals(names);
+            installed = names;
+            if (pageChanged || installedChanged)
+            {
+                page = 0;
+                selected = 0;
+                notice = null;
+                UpdateTabs();
+                UpdateCards(pageChanged);
+            }
+            else
+            {
+                SelectCard(0, false);
+            }
+        }
+
         public void SetInstalled(HashSet<string> names)
         {
+            if (installed.SetEquals(names)) { return; }
             installed = names;
-            UpdateCards();
+            UpdateTabs();
+            UpdateCards(false);
         }
 
         public void SetMode(string mode)
         {
-            hold.Active = mode == "hold";
-            once.Active = !hold.Active;
-            hold.Invalidate();
-            once.Invalidate();
-        }
-
-        public void Reset()
-        {
-            page = 0;
-            selected = 0;
-            notice = null;
-            lastWheel = 0;
-            lastPointer = Cursor.Position;
-            grid.AutoScrollPosition = Point.Empty;
-            UpdateCards();
+            hold.SetActive(mode == "hold");
+            once.SetActive(!hold.Active);
         }
 
         public void FocusSelection() { cards[selected].Focus(); }
 
         private void ChangePage(int index)
         {
-            page = (index + pages.Length) % pages.Length;
+            int next = (index + pages.Length) % pages.Length;
+            if (next == page) { return; }
+            tabs[page].SetActive(false);
+            page = next;
+            tabs[page].SetActive(true);
             selected = 0;
             notice = null;
             lastPointer = Cursor.Position;
             grid.AutoScrollPosition = Point.Empty;
-            UpdateCards();
+            UpdateCards(true);
             FocusSelection();
         }
 
         private bool IsInstalled(Skill skill) { return installed.Count == 0 || installed.Contains(skill.Name); }
 
-        private void UpdateCards()
+        private void UpdateTabs()
         {
             for (int i = 0; i < tabs.Length; i++)
             {
-                tabs[i].Counter = pages[i].Count(IsInstalled) + "/" + pages[i].Length;
-                tabs[i].AccessibleName = PageNames[i] + "，已安装 " + tabs[i].Counter;
-                tabs[i].Active = page == i;
-                tabs[i].Invalidate();
+                Tile tab = tabs[i];
+                string counter = pages[i].Count(IsInstalled) + "/" + pages[i].Length;
+                if (tab.Counter != counter)
+                {
+                    tab.Counter = counter;
+                    tab.AccessibleName = PageNames[i] + "，已安装 " + counter;
+                    tab.Invalidate();
+                }
+                tab.SetActive(page == i);
             }
+        }
+
+        private void UpdateCards(bool layout)
+        {
             Skill[] current = pages[page];
             grid.SuspendLayout();
             for (int i = 0; i < cards.Length; i++)
             {
                 Tile card = cards[i];
                 if (i >= current.Length) { card.Visible = false; continue; }
-                card.Skill = current[i];
-                card.Available = IsInstalled(current[i]);
-                card.Text = current[i].Name;
-                card.AccessibleDescription = current[i].Category + "，" + current[i].Description +
-                    (card.Available ? "" : "，未安装");
-                card.Cursor = card.Available ? Cursors.Hand : Cursors.Default;
-                card.Active = i == selected;
+                card.SetSkill(current[i], IsInstalled(current[i]));
+                card.SetActive(i == selected);
                 card.Visible = true;
-                card.Invalidate();
             }
-            LayoutCards();
+            if (layout) { LayoutCards(); }
             grid.ResumeLayout();
-            Invalidate();
+            InvalidateFooter();
         }
 
         private void SelectCard(int index, bool focus)
         {
-            cards[selected].Active = false;
-            cards[selected].Invalidate();
-            selected = index;
-            cards[selected].Active = true;
-            cards[selected].Invalidate();
-            notice = null;
+            bool changed = selected != index;
+            if (changed)
+            {
+                cards[selected].SetActive(false);
+                selected = index;
+                cards[selected].SetActive(true);
+            }
+            if (changed || notice != null)
+            {
+                notice = null;
+                InvalidateFooter();
+            }
             if (focus)
             {
                 lastPointer = Cursor.Position;
                 FocusSelection();
             }
-            Invalidate();
+        }
+
+        private void InvalidateFooter()
+        {
+            Invalidate(new Rectangle(0, footerTop, ClientSize.Width, Math.Max(0, ClientSize.Height - footerTop)));
+        }
+
+        private int NameCapacity(Graphics g, int width)
+        {
+            const string sample = "0000000000";
+            if (nameSampleDpi != g.DpiX)
+            {
+                nameSampleDpi = g.DpiX;
+                nameSampleWidth = TextRenderer.MeasureText(g, sample, mono, new Size(4096, S(32)),
+                    TextFormatFlags.NoPadding | TextFormatFlags.SingleLine).Width;
+            }
+            return Math.Max(1, width * sample.Length / Math.Max(1, nameSampleWidth));
         }
 
         public void ShowNotice(string text)
         {
             notice = text;
-            Invalidate();
+            InvalidateFooter();
         }
 
         private void Pick()
@@ -313,14 +356,18 @@ namespace SkillPeek
             if (close == null) { return; }
             Graphics g = e.Graphics;
             g.SmoothingMode = SmoothingMode.AntiAlias;
-            using (var accent = new SolidBrush(Green))
+            if (e.ClipRectangle.Top < S(58))
             {
-                g.FillEllipse(accent, S(Inset), S(28), S(20), S(20));
+                using (var accent = new SolidBrush(Green))
+                {
+                    g.FillEllipse(accent, S(Inset), S(28), S(20), S(20));
+                }
+                TextRenderer.DrawText(g, "↗", body, new Rectangle(S(Inset), S(27), S(20), S(20)), Color.White,
+                    SingleLine | TextFormatFlags.HorizontalCenter);
+                TextRenderer.DrawText(g, "Skills", heading, new Rectangle(S(52), S(18), S(80), S(40)), Ink, SingleLine);
             }
-            TextRenderer.DrawText(g, "↗", body, new Rectangle(S(Inset), S(27), S(20), S(20)), Color.White,
-                SingleLine | TextFormatFlags.HorizontalCenter);
-            TextRenderer.DrawText(g, "Skills", heading, new Rectangle(S(52), S(18), S(80), S(40)), Ink, SingleLine);
 
+            if (e.ClipRectangle.Bottom <= footerTop) { return; }
             int width = Math.Max(1, ClientSize.Width - 2 * S(Inset));
             var footer = new Rectangle(S(Inset), footerTop, width, S(48));
             using (var divider = new Pen(Line))
@@ -374,6 +421,10 @@ namespace SkillPeek
         {
             public readonly string Page, Name, Category, Description;
             public readonly Color Color;
+            public int TextWidth;
+            public float TextDpi;
+            public string PurposeText;
+            public string[] NameLines;
 
             public Skill(string page, string name, string category, string description, Color color)
             {
@@ -389,10 +440,10 @@ namespace SkillPeek
         {
             private readonly SkillPanel panel;
             private bool hover;
-            public Skill Skill;
+            private Skill Skill;
             public string Counter;
-            public bool Active;
-            public bool Available;
+            public bool Active { get; private set; }
+            private bool Available;
 
             public Tile(SkillPanel panel)
             {
@@ -403,6 +454,24 @@ namespace SkillPeek
                 Cursor = Cursors.Hand;
                 BackColor = Canvas;
                 UseVisualStyleBackColor = false;
+            }
+
+            public void SetActive(bool active)
+            {
+                if (Active == active) { return; }
+                Active = active;
+                Invalidate();
+            }
+
+            public void SetSkill(Skill skill, bool available)
+            {
+                if (Skill == skill && Available == available) { return; }
+                Skill = skill;
+                Available = available;
+                if (Text != skill.Name) { Text = skill.Name; }
+                AccessibleDescription = skill.Category + "，" + skill.Description + (available ? "" : "，未安装");
+                Cursor = available ? Cursors.Hand : Cursors.Default;
+                Invalidate();
             }
 
             protected override void OnMouseEnter(EventArgs e)
@@ -460,11 +529,26 @@ namespace SkillPeek
                 {
                     TextRenderer.DrawText(g, "未安装", panel.body, metadata, Muted, SingleLine | TextFormatFlags.Right);
                 }
-                DrawPurpose(g, inset, textWidth, disabled ? Muted : Ink);
-                DrawName(g, inset, textWidth);
+                if (Skill.TextWidth != textWidth || Skill.TextDpi != g.DpiX)
+                {
+                    Skill.PurposeText = FormatPurpose(g, textWidth);
+                    Skill.NameLines = WrapName(panel.NameCapacity(g, textWidth));
+                    Skill.TextWidth = textWidth;
+                    Skill.TextDpi = g.DpiX;
+                }
+                TextRenderer.DrawText(g, Skill.PurposeText, panel.purpose,
+                    new Rectangle(inset, panel.S(32), textWidth, panel.S(38)), disabled ? Muted : Ink,
+                    TextFormatFlags.WordBreak | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix | TextFormatFlags.NoPadding);
+                int lineHeight = panel.S(13);
+                int y = panel.S(72);
+                foreach (string line in Skill.NameLines)
+                {
+                    TextRenderer.DrawText(g, line, panel.mono, new Rectangle(inset, y, textWidth, lineHeight), Muted, SingleLine);
+                    y += lineHeight;
+                }
             }
 
-            private void DrawPurpose(Graphics g, int left, int width, Color color)
+            private string FormatPurpose(Graphics g, int width)
             {
                 string description = Skill.Description;
                 int end = description.Length - 1;
@@ -477,37 +561,28 @@ namespace SkillPeek
                 {
                     description = description.Insert(end - 1, "\n");
                 }
-                TextRenderer.DrawText(g, description, panel.purpose,
-                    new Rectangle(left, panel.S(32), width, panel.S(38)), color,
-                    TextFormatFlags.WordBreak | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix | TextFormatFlags.NoPadding);
+                return description;
             }
 
             private static bool IsHan(char c) { return c >= '\u4E00' && c <= '\u9FFF'; }
 
-            private void DrawName(Graphics g, int left, int width)
+            private string[] WrapName(int capacity)
             {
-                const string sample = "0000000000";
-                Size unrestricted = new Size(4096, panel.S(32));
-                int sampleWidth = TextRenderer.MeasureText(g, sample, panel.mono, unrestricted,
-                    TextFormatFlags.NoPadding | TextFormatFlags.SingleLine).Width;
-                int capacity = Math.Max(1, width * sample.Length / Math.Max(1, sampleWidth));
+                var lines = new List<string>(3);
                 string remaining = Skill.Name;
-                int lineHeight = panel.S(13);
-                int y = panel.S(72);
                 for (int line = 0; line < 3 && remaining.Length > 0; line++)
                 {
                     if (remaining.Length <= capacity || line == 2)
                     {
-                        TextRenderer.DrawText(g, remaining, panel.mono, new Rectangle(left, y, width, lineHeight), Muted, SingleLine);
+                        lines.Add(remaining);
                         break;
                     }
                     int split = remaining.LastIndexOf('-', capacity - 1) + 1;
                     if (split == 0 || remaining.Length - split > capacity * (2 - line)) { split = capacity; }
-                    TextRenderer.DrawText(g, remaining.Substring(0, split), panel.mono,
-                        new Rectangle(left, y, width, lineHeight), Muted, SingleLine);
+                    lines.Add(remaining.Substring(0, split));
                     remaining = remaining.Substring(split);
-                    y += lineHeight;
                 }
+                return lines.ToArray();
             }
         }
     }
