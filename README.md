@@ -31,10 +31,6 @@ Get-FileHash .\SkillPeek.exe -Algorithm SHA256
 
 结果应该和 Release 里 `SkillPeek.exe.sha256` 的第一段完全一致。
 
-### 为什么默认不是 Ctrl+Space
-
-中文 Windows 上那个组合归输入法（搜狗、微软拼音都用它切中英文）。热键注册会「成功」，但按键根本到不了程序——这是这个项目踩过的第一个坑。默认给的是三键组合，托盘里可以换成 `Alt` + 反引号等预设。
-
 ## 用法
 
 | 操作 | 结果 |
